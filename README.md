@@ -4,13 +4,19 @@ Automated maintenance script for Arch Linux systems. Handles system updates, AUR
 
 ## Features
 
-- **System Updates**: Updates all official packages via `pacman -Syu`
-- **AUR Updates**: Updates AUR packages using `yay` or `paru`
-- **Cache Cleaning**: Removes old package versions (keeps 3 most recent)
-- **Orphan Removal**: Finds and removes orphaned packages
+- **System Updates**: Updates all packages. If an AUR helper (`yay`/`paru`) is
+  present it performs the full system upgrade in one pass (official + AUR);
+  otherwise it falls back to `pacman -Syu`.
+- **Cache Cleaning**: Removes old package versions (keeps 3 most recent by
+  default, configurable with `--keep`)
+- **Orphan Removal**: Repeatedly finds and removes orphaned packages until none
+  remain
 - **Logging**: All operations logged to `~/.local/share/arch-maintenance.log`
-- **Color Output**: Beautiful terminal output with status indicators
+- **Color Output**: Terminal output with status indicators, automatically
+  disabled for non-interactive output (cron/systemd) or when `NO_COLOR` is set
 - **Error Handling**: Graceful error handling with summary report
+- **Configurable**: Command-line flags to skip tasks, run unattended, or preview
+  changes with `--dry-run`
 
 ## Requirements
 
@@ -60,33 +66,54 @@ arch-maintain
 ### What It Does
 
 The script will automatically:
-1. Update all system packages
-2. Update AUR packages (if yay/paru is installed)
-3. Clean package cache (keeping 3 recent versions)
-4. Remove orphaned packages
+1. Update all packages (official + AUR in one pass if yay/paru is installed)
+2. Clean package cache (keeping the 3 most recent versions)
+3. Remove orphaned packages (repeated until none remain)
+
+### Options
+
+```
+-k, --keep N     Number of recent package versions to keep (default: 3)
+-y, --noconfirm  Pass --noconfirm to pacman/AUR helper (unattended runs)
+-n, --dry-run    Show what would be done without making any changes
+--no-color       Disable colored output
+--skip-system    Skip the system/AUR package update
+--skip-aur       Skip AUR updates (update official packages only)
+--skip-cache     Skip package cache cleaning
+--skip-orphans   Skip orphaned package removal
+```
+
+Examples:
+```bash
+./arch_maintain.py --dry-run          # Preview actions, change nothing
+./arch_maintain.py -y                 # Unattended (no confirmation prompts)
+./arch_maintain.py --keep 5           # Keep 5 cached versions per package
+./arch_maintain.py --skip-orphans     # Everything except orphan removal
+```
 
 ### Example Output
 
 ```
-╔════════════════════════════════════════════════════════╗
-║         Arch Linux Maintenance Script                 ║
-╚════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════╗
+║            Arch Linux Maintenance Script             ║
+╚══════════════════════════════════════════════════════╝
+
+→ Requesting sudo privileges...
 
 ============================================================
-Updating System Packages
+Updating System + AUR Packages
 ============================================================
 
-→ Running: sudo pacman -Syu
-[pacman output...]
-✓ System update
+→ Using AUR helper: yay
+[yay output...]
+✓ System + AUR update
 
 ============================================================
 Maintenance Summary
 ============================================================
 
 Completed Tasks:
-  ✓ System update
-  ✓ AUR update
+  ✓ System + AUR update
   ✓ Cache cleaning
   ✓ Remove orphans
 
@@ -112,7 +139,7 @@ After=network-online.target
 [Service]
 Type=oneshot
 User=YOUR_USERNAME
-ExecStart=/home/YOUR_USERNAME/arch-maintenance/arch_maintain.py
+ExecStart=/home/YOUR_USERNAME/arch-maintenance/arch_maintain.py --noconfirm
 ```
 
 2. Create a timer:
@@ -148,8 +175,17 @@ crontab -e
 
 Add line (runs at 2 AM daily):
 ```
-0 2 * * * /home/YOUR_USERNAME/arch-maintenance/arch_maintain.py
+0 2 * * * /home/YOUR_USERNAME/arch-maintenance/arch_maintain.py --noconfirm
 ```
+
+> **Note on unattended runs:** With no interactive terminal, `sudo` cannot
+> prompt for a password. For cron/systemd runs to succeed you must grant
+> passwordless sudo for the relevant commands, e.g. in `visudo`:
+> ```
+> YOUR_USERNAME ALL=(root) NOPASSWD: /usr/bin/pacman, /usr/bin/paccache
+> ```
+> Colored output is automatically disabled when not attached to a terminal, so
+> logs stay clean.
 
 ## Logs
 
