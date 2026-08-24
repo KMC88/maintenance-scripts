@@ -252,4 +252,4 @@ Feel free to modify and extend this script for your needs!
 
 ## License
 
-MIT License - Feel free to use and modify as needed.
+Licensed under the [MIT License](LICENSE) - feel free to use and modify as needed.
