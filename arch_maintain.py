@@ -33,9 +33,11 @@ class Colors:
 
 
 class ArchMaintenance:
+    DEFAULT_LOG_FILE = Path.home() / '.local' / 'share' / 'arch-maintenance.log'
+
     def __init__(self, keep=3, noconfirm=False, dry_run=False,
                  skip_system=False, skip_aur=False, skip_cache=False,
-                 skip_orphans=False):
+                 skip_orphans=False, log_file=None):
         self.keep = keep
         self.noconfirm = noconfirm
         self.dry_run = dry_run
@@ -44,13 +46,15 @@ class ArchMaintenance:
         self.skip_cache = skip_cache
         self.skip_orphans = skip_orphans
 
-        self.log_file = Path.home() / '.local' / 'share' / 'arch-maintenance.log'
+        self.log_file = Path(log_file) if log_file else self.DEFAULT_LOG_FILE
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
         self.tasks_completed = []
         self.tasks_failed = []
         self.tasks_skipped = []
 
-        self.logger = logging.getLogger('arch-maintenance')
+        # Name the logger per log file so distinct paths (e.g. in tests) get
+        # isolated handlers rather than reusing the first one created.
+        self.logger = logging.getLogger(f'arch-maintenance:{self.log_file}')
         self.logger.setLevel(logging.INFO)
         if not self.logger.handlers:
             handler = logging.FileHandler(self.log_file)

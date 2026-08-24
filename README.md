@@ -199,6 +199,16 @@ View recent logs:
 tail -n 50 ~/.local/share/arch-maintenance.log
 ```
 
+## Testing
+
+The test suite uses only the standard library (`unittest`), so no extra
+packages are needed. Every external command is mocked, so the tests never touch
+`pacman`, `sudo`, or your real system:
+
+```bash
+python3 -m unittest -v
+```
+
 ## Customization
 
 Edit `arch_maintain.py` to customize:
