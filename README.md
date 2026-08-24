@@ -1,5 +1,7 @@
 # Arch Linux Maintenance Script
 
+[![Tests](https://github.com/KMC88/maintenance-scripts/actions/workflows/tests.yml/badge.svg)](https://github.com/KMC88/maintenance-scripts/actions/workflows/tests.yml)
+
 Automated maintenance script for Arch Linux systems. Handles system updates, AUR updates, cache cleaning, and orphan removal.
 
 ## Features
